@@ -69,9 +69,9 @@ class GUI:
             pygame.draw.polygon(self.window, (230, 230, 250), verts)
 
         # Draw text
-        time_text = self.font.render('Real time factor ' + f'{rtf:.2f}x | Real time: ' + f'{real_time:.2f} seconds | Sim time: ' + f'{sim_time:.2f} seconds', 
-                                     True, (255,255,255))
-        self.window.blit(time_text, (170, 100)) # Blit is like the "draw" equivalent for text/images
+        # time_text = self.font.render('Real time factor ' + f'{rtf:.2f}x | Real time: ' + f'{real_time:.2f} seconds | Sim time: ' + f'{sim_time:.2f} seconds', 
+                                    #  True, (255,255,255))
+        # self.window.blit(time_text, (170, 100)) # Blit is like the "draw" equivalent for text/images
 
         # Update the display to show the latest changes
         pygame.display.flip()
