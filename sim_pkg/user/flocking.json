@@ -1,0 +1,11 @@
+{
+    "NUM_RUNS": 1,
+    "DEFAULT_USER": "flocking.py",
+    "DEFAULT_CONFIG": "flocking_config.json",
+    "DEFAULT_INIT": "init_pose_test.py",
+    "DEFAULT_TRIALS": 1,
+    "USER_1": "flocking.py",
+    "CONFIG_1": "flocking_config.json",
+    "INIT_1": "init_pose_test.py",
+    "TRIALS_1": 1
+}
