@@ -4,10 +4,10 @@ import math
 import random
 
 d = 0.5 # repulsion distance threshold
-r = 1.5 # repulsion constant
+r = 1.0 # repulsion constant
 a = 0.8 # attraction constant
-k = 2.0 # heading constant
-m = 20.0 # migration constant
+k = 1.1 # heading constant
+m = 10.0 # migration constant
 s = 0.5 # steering constant
 n = 5 # number of neighbors
 
@@ -43,7 +43,9 @@ def center(robot):
         # calculate the vector to the center
         vec_center = np.array([0.0-pose_t[0], 0.0-pose_t[1]])
         vec_center = vec_center/np.linalg.norm(vec_center) # normalize the vector
-        vec_desired = np.add(vec_desired, m*vec_center) # add the vector to the desired vector
+        # calculate the distance to the center
+        dist_center = np.linalg.norm(vec_center)
+        vec_desired = np.add(vec_desired, m*(dist_center**3)*vec_center) # add the vector to the desired vector
         vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
 
         msgs = robot.recv_msg()
