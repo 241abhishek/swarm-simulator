@@ -1,7 +1,0 @@
-{
-    "NUM_RUNS": 1,
-    "DEFAULT_USER": "test_comms.py",
-    "DEFAULT_CONFIG": "test_comms_config.json",
-    "DEFAULT_INIT": "init_test_comms.py",
-    "DEFAULT_TRIALS": 1
-}

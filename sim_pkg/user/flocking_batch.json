@@ -1,0 +1,7 @@
+{
+    "NUM_RUNS": 1,
+    "DEFAULT_USER": "flocking.py",
+    "DEFAULT_CONFIG": "flocking_config.json",
+    "DEFAULT_INIT": "init_flocking.py",
+    "DEFAULT_TRIALS": 1
+}
