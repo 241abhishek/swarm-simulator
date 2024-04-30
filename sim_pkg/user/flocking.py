@@ -28,16 +28,6 @@ def read_from_txt(filepath):
         except:
             pass
 
-def message(robot):
-    if robot.id == 0:
-        msg = robot.recv_msg()
-        if len(msg) > 0:
-            print(f"{msg =}")
-        else:
-            print("No msg")
-    else:
-        robot.send_msg(f"{robot.id}")
-
 def center(robot):
     """
     Function to implement the flocking algorithm.
