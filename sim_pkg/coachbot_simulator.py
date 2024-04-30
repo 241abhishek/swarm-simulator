@@ -55,7 +55,7 @@ def create_trackbars():
         s = s/100
         n = cv2.getTrackbarPos("n", "User Variables")
 
-        write_to_txt("user/variables.txt", d, r, a, k, m, s, n)
+        write_to_txt("user/flocking_variables.txt", d, r, a, k, m, s, n)
         
         cv2.waitKey(1)
 
