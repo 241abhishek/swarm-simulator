@@ -1,0 +1,7 @@
+{
+    "NUM_RUNS": 1,
+    "DEFAULT_USER": "strombom.py",
+    "DEFAULT_CONFIG": "strombom_config.json",
+    "DEFAULT_INIT": "init_strombom.py",
+    "DEFAULT_TRIALS": 1
+}
