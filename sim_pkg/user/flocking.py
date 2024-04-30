@@ -37,7 +37,7 @@ def center(robot):
     """
 
     # read the user variables from the txt file
-    read_from_txt("user/variables.txt")
+    read_from_txt("user/flocking_variables.txt")
     print(f"{d =}, {r =}, {a =}, {k =}, {m =}, {s =}, {n =}")
 
     # empty desired vector initialization
