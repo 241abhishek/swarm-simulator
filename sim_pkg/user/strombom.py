@@ -8,7 +8,7 @@ import random
 N = 10 # number of sheep
 n = 5 # number of nearest neighbors
 r_s = 6.5 # sheperd detection distance
-r_a = 0.2 # agent to agent interaction distance
+r_a = 2.0 # 0.2 # agent to agent interaction distance
 p_a = 2.0 # relative strength of repulsion from other agents
 c = 1.05 # relative strength of attraction to the n nearest neighbours
 p_s = 1.0 # relative strength of repulsion from the shepherd
@@ -26,7 +26,7 @@ f_N = 1.0 # if all the sheep are within this distance from their GCM, the shephe
           # drives the flock to the goal position, or else it collects the flock
 shepherd_speed = 10 # 0.25 # speed of the shepherd
 
-goal_pos = [0, 0]
+goal_pos = [-7.5/2.0, -7.5/2.0]
 
 # create a function to parse a txt file and assign the values to the user variables
 def read_from_txt(filepath):
@@ -147,14 +147,18 @@ def sheep(robot):
                     vec_desired = np.add(vec_desired, c*vec_attraction)
                     vec_desired = vec_desired/np.linalg.norm(vec_desired)
 
-        # calculate the error in heading wrt the desired movement direction
-        heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
+        # move only if the sheep is prompted to move
+        if vec_desired[0] != 0.0 and vec_desired[1] != 0.0:
+            # calculate the error in heading wrt the desired movement direction
+            heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
 
-        if heading_error > 0:
-            robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
+            if heading_error > 0:
+                robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
+            else:
+                robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
         else:
-            robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
- 
+            robot.set_vel(0.0, 0.0) # stop moving
+        
         # construct message to send to other robots
         pose_t.append(float(robot.virtual_id))
         msg = pose_t
