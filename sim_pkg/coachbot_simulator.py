@@ -10,7 +10,7 @@ from gui import GUI
 import cv2
 
 # create a function to parse a txt file and assign the values to the user variables
-def write_to_txt(filepath, d, r, a, k, m, s, n):
+def flocking_write_to_txt(filepath, d, r, a, k, m, s, n):
     with open(filepath, "w") as f:
         f.write(f"d = {d}\n")
         f.write(f"r = {r}\n")
@@ -20,7 +20,7 @@ def write_to_txt(filepath, d, r, a, k, m, s, n):
         f.write(f"s = {s}\n")
         f.write(f"n = {n}\n")
 
-def create_trackbars():
+def flocking_create_trackbars():
     # create trackabars to adjust the values of the user variables
     cv2.namedWindow("User Variables")
     cv2.createTrackbar("d", "User Variables", 0, 10, lambda x: None)
@@ -32,7 +32,7 @@ def create_trackbars():
     cv2.createTrackbar("n", "User Variables", 0, 10, lambda x: None)
 
     # set the default values of the user variables
-    cv2.setTrackbarPos("d", "User Variables", 4)
+    cv2.setTrackbarPos("d", "User Variables", 6)
     cv2.setTrackbarPos("r", "User Variables", 80)
     cv2.setTrackbarPos("a", "User Variables", 8)
     cv2.setTrackbarPos("k", "User Variables", 12)
@@ -55,7 +55,7 @@ def create_trackbars():
         s = s/100
         n = cv2.getTrackbarPos("n", "User Variables")
 
-        write_to_txt("user/flocking_variables.txt", d, r, a, k, m, s, n)
+        flocking_write_to_txt("user/flocking_variables.txt", d, r, a, k, m, s, n)
         
         cv2.waitKey(1)
 
@@ -68,7 +68,7 @@ def run_threads(bootloader, simulator, num_robots):
     for thread in threads:
         thread.start()
 
-def main(userfile, config_data, initfile, run_number, trial_number, calibrate):
+def main(userfile, config_data, initfile, run_number, trial_number, calibrate_flocking=False):
     '''
     Runs the robots, simulator, and GUI in parallel. 
     If the program is interrupted, terminate all processes cleanly.
@@ -99,28 +99,28 @@ def main(userfile, config_data, initfile, run_number, trial_number, calibrate):
     r_proc.start()
 
     # start the thread that creates the trackbars
-    if calibrate:
-        t_proc = mp.Process(target=create_trackbars)
+    if calibrate_flocking:
+        t_proc = mp.Process(target=flocking_create_trackbars)
         t_proc.start()
 
     # Wait for simulator to complete or terminate cleanly
     try:
         s_proc.join() # Wait for simulator process to complete
         r_proc.terminate() # Terminate the robot process after the simulator process is finished
-        if calibrate: t_proc.terminate() # Terminate the trackbar process after the simulator process is finished
+        if calibrate_flocking: t_proc.terminate() # Terminate the trackbar process after the simulator process is finished
         print(f"Simulation {run_number} Trial {trial_number} completed.")
 
     except KeyboardInterrupt:
         s_proc.terminate()
         r_proc.terminate()
-        if calibrate: t_proc.terminate()
+        if calibrate_flocking: t_proc.terminate()
         print(f"User interrupted: Simulation {run_number} Trial {trial_number} terminated.")
 
 if __name__ == '__main__':
     # Parse command line arguments to obtain the paths to the required files
     parser = argparse.ArgumentParser(description="Run the robots, simulator, and GUI")
     parser.add_argument("-b", "--batchfile", type=str, help="Path to user code file", required=True)
-    parser.add_argument("-c", "--calibrate", type=bool, help="Open Trackbars for calibration", required=False, default=False)
+    parser.add_argument("-cf", "--calibrate_flocking", type=bool, help="Open Trackbars for calibration", required=False, default=False)
     args = parser.parse_args()
 
     # Unpack batchfile data
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         batch_config = json.loads(bfile.read())
     bfile.close()
 
-    calibrate = args.calibrate
+    calibrate_flocking = args.calibrate_flocking
 
     num_runs = batch_config["NUM_RUNS"]
 
@@ -162,4 +162,4 @@ if __name__ == '__main__':
                 initfile = None
             
             # Run main function
-            main(userfile, config_data, initfile, i, trial, calibrate)
+            main(userfile, config_data, initfile, i, trial, calibrate_flocking)

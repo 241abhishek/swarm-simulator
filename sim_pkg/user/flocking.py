@@ -4,7 +4,7 @@ import math
 import random
 
 # default values found through trial and error
-d = 0.4 # repulsion distance threshold
+d = 0.6 # repulsion distance threshold
 r = 8.0 # repulsion constant
 a = 0.8 # attraction constant
 k = 1.2 # heading constant
