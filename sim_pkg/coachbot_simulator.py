@@ -32,12 +32,12 @@ def create_trackbars():
     cv2.createTrackbar("n", "User Variables", 0, 10, lambda x: None)
 
     # set the default values of the user variables
-    cv2.setTrackbarPos("d", "User Variables", 3)
-    cv2.setTrackbarPos("r", "User Variables", 60)
+    cv2.setTrackbarPos("d", "User Variables", 4)
+    cv2.setTrackbarPos("r", "User Variables", 80)
     cv2.setTrackbarPos("a", "User Variables", 8)
     cv2.setTrackbarPos("k", "User Variables", 12)
-    cv2.setTrackbarPos("m", "User Variables", 20)
-    cv2.setTrackbarPos("s", "User Variables", 55)
+    cv2.setTrackbarPos("m", "User Variables", 25)
+    cv2.setTrackbarPos("s", "User Variables", 30)
     cv2.setTrackbarPos("n", "User Variables", 5)
     
     while True:

@@ -4,12 +4,12 @@ import math
 import random
 
 # default values found through trial and error
-d = 0.3 # repulsion distance threshold
-r = 6.0 # repulsion constant
+d = 0.4 # repulsion distance threshold
+r = 8.0 # repulsion constant
 a = 0.8 # attraction constant
 k = 1.2 # heading constant
-m = 20.0 # migration constant
-s = 0.55 # steering constant
+m = 25.0 # migration constant
+s = 0.3 # steering constant
 n = 5 # number of neighbors
 
 # create a function to parse a txt file and assign the values to the user variables
