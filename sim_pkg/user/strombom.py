@@ -3,7 +3,7 @@ import numpy as np
 import math
 import random
 
-# default values found through trial and error
+# default values (scaled) from the original paper
 # sheep parameters
 N = 10 # number of sheep
 n = 5 # number of nearest neighbors
@@ -38,22 +38,20 @@ def read_from_txt(filepath):
     with open(filepath, "r") as f:
         lines = f.readlines()
         try:
-            n = int(lines[0].split()[1])
-            r_s = float(lines[1].split()[1])
-            r_a = float(lines[2].split()[1])
-            p_a = float(lines[3].split()[1])
-            c = float(lines[4].split()[1])
-            p_s = float(lines[5].split()[1])
-            h = float(lines[6].split()[1])
-            e = float(lines[7].split()[1])
-            p = float(lines[8].split()[1])
-            sheep_speed = float(lines[10].split()[1])
-            st_con = float(lines[11].split()[1])
-            f_N = float(lines[9].split()[1])
-            shepherd_speed = float(lines[11].split()[1])
-            sts_con = float(lines[12].split()[1])
-            goal_x = float(lines[13].split()[1])
-            goal_y = float(lines[14].split()[1])
+            n = int(lines[0].split(" = ")[1])
+            r_s = float(lines[1].split(" = ")[1])
+            r_a = float(lines[2].split(" = ")[1])
+            p_a = float(lines[3].split(" = ")[1])
+            c = float(lines[4].split(" = ")[1])
+            p_s = float(lines[5].split(" = ")[1])
+            h = float(lines[6].split(" = ")[1])
+            e = float(lines[7].split(" = ")[1])
+            p = float(lines[8].split(" = ")[1])
+            sheep_speed = float(lines[9].split(" = ")[1])
+            st_con = float(lines[10].split(" = ")[1])
+            f_N = float(lines[11].split(" = ")[1])
+            shepherd_speed = float(lines[12].split(" = ")[1])
+            sts_con = float(lines[13].split(" = ")[1])
         except:
             pass
 
@@ -65,7 +63,8 @@ def shepherd(robot):
         robot (robot_instance): The robot object to control.
     """
     # read the user variables from the txt file
-    # read_from_txt("user/strombom_variables.txt")
+    read_from_txt("user/strombom_variables.txt")
+    # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}")
 
     # empty desired vector initialization
     vec_desired = np.array([0.0, 0.0])
@@ -110,7 +109,7 @@ def shepherd(robot):
 
                 if all_within_f_N:
                     # driving mode
-                    print("Driving mode")
+                    # print("Driving mode")
                     # calculate the equation of the line connecting the GCM and the goal position
                     if (gcm[0] - goal_pos[0]) == 0:
                         theta = math.pi/2
@@ -190,7 +189,7 @@ def sheep(robot):
         robot (robot_instance): The robot object to control.
     """
     # read the user variables from the txt file
-    # read_from_txt("user/strombom_variables.txt")
+    read_from_txt("user/strombom_variables.txt")
 
     # empty desired vector initialization
     vec_desired = np.array([0.0, 0.0])

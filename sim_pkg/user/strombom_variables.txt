@@ -1,0 +1,14 @@
+n = 5
+r_s = 6.5
+r_a = 0.2
+p_a = 2.0
+c = 1.1
+p_s = 1.0
+h = 0.5
+e = 0.3
+p = 0.05
+sheep_speed = 5
+st_con = 0.5
+f_N = 1.0
+shepherd_speed = 25
+sts_con = 0.5
