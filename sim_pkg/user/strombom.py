@@ -32,6 +32,12 @@ goal_x = -7.5/2.0
 goal_y = -7.5/2.0
 goal_pos = np.array([goal_x, goal_y]) # goal position for the shepherd
 
+# arena dimensions
+arena_x = 7.5
+arena_y = 7.5
+arena_threshold = 1.0
+arena_rep = 0.5
+
 # create a function to parse a txt file and assign the values to the user variables
 def read_from_txt(filepath):
     global N, n, r_s, r_a, p_a, c, p_s, h, e, p, f_N, sheep_speed, shepherd_speed, st_con, sts_con, goal_x, goal_y
@@ -66,7 +72,7 @@ def shepherd(robot):
     """
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
-    print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
+    # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
 
     # empty desired vector initialization
     vec_desired = np.array([0.0, 0.0])
@@ -204,6 +210,44 @@ def sheep(robot):
         vec_curr = np.array([np.cos(pose_t[2]), np.sin(pose_t[2])])
         vec_curr = vec_curr/np.linalg.norm(vec_curr) # normalize the vector
 
+        # check if the sheep is near the arena boundary
+        if pose_t[0] < -arena_x + arena_threshold or pose_t[0] > arena_x - arena_threshold or pose_t[1] < -arena_y + arena_threshold or pose_t[1] > arena_y - arena_threshold:
+            # print(f"Sheep {robot.virtual_id} is near the arena boundary")
+            # calculate the vector perpendicular to the arena boundary
+            vec_boundary = np.array([0.0, 0.0])
+            if pose_t[0] < -arena_x + arena_threshold :
+                vec_boundary[0] = 1.0
+            elif pose_t[0] > arena_x - arena_threshold:
+                vec_boundary[0] = -1.0
+            if pose_t[1] < -arena_y + arena_threshold:
+                vec_boundary[1] = 1.0
+            elif pose_t[1] > arena_y - arena_threshold:
+                vec_boundary[1] = -1.0
+
+            # add the vector to the desired vector
+            vec_desired = np.add(vec_desired, arena_rep*vec_boundary)
+            vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
+
+            # move only if the sheep is prompted to move
+            if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
+                # calculate the error in heading wrt the desired movement direction
+                heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
+
+                if heading_error > 0:
+                    robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
+                else:
+                    robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
+            else:
+                # print(f"Stopping sheep {robot.virtual_id} near the arena boundary")
+                robot.set_vel(0.0, 0.0) # stop moving
+            
+            # construct message to send to other robots
+            pose_t.append(float(robot.virtual_id))
+            msg = pose_t
+            robot.send_msg(msg)
+            
+            return
+
         msgs = robot.recv_msg() # receive messages from other robots
         if len(msgs) > 0:
             # check if any other sheep are within the repulsion distance
@@ -247,7 +291,7 @@ def sheep(robot):
 
                     # add the vector to the desired vector
                     vec_desired = np.add(vec_desired, p_s*vec_shepherd)
-                    if vec_desired[0] != 0.0 and vec_desired[1] != 0.0:
+                    if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
                         vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
     
                     # calculate the local center of mass (LCM) of the n nearest neighbors
@@ -266,7 +310,7 @@ def sheep(robot):
                     vec_desired = vec_desired/np.linalg.norm(vec_desired)
 
         # move only if the sheep is prompted to move
-        if vec_desired[0] != 0.0 and vec_desired[1] != 0.0:
+        if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
             # calculate the error in heading wrt the desired movement direction
             heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
 
