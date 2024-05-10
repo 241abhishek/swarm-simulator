@@ -64,7 +64,7 @@ def shepherd(robot):
     """
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
-    # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}")
+    print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}")
 
     # empty desired vector initialization
     vec_desired = np.array([0.0, 0.0])
@@ -115,7 +115,7 @@ def shepherd(robot):
                         theta = math.pi/2
                     else:
                         m = (gcm[1] - goal_pos[1])/(gcm[0] - goal_pos[0])
-                        c = gcm[1] - m*gcm[0]
+                        _c = gcm[1] - m*gcm[0]
                         theta = math.atan(m)
                     # calculate the driving position (p_d) behind the flock    
                     goal_point_1 = np.array([gcm[0] + p_d*np.cos(theta), gcm[1] + p_d*np.sin(theta)])
@@ -149,7 +149,7 @@ def shepherd(robot):
                         theta = math.pi/2
                     else:
                         m = (gcm[1] - goal_pos[1])/(gcm[0] - goal_pos[0])
-                        c = gcm[1] - m*gcm[0]
+                        _c = gcm[1] - m*gcm[0]
                         theta = math.atan(m)
                     # calculate the collecting position (p_c) behind the farthest sheep
                     goal_point_1 = np.array([farthest_sheep[0] + p_c*np.cos(theta), farthest_sheep[1] + p_c*np.sin(theta)])
@@ -245,7 +245,8 @@ def sheep(robot):
 
                     # add the vector to the desired vector
                     vec_desired = np.add(vec_desired, p_s*vec_shepherd)
-                    vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
+                    if vec_desired[0] != 0.0 and vec_desired[1] != 0.0:
+                        vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
     
                     # calculate the local center of mass (LCM) of the n nearest neighbors
                     # calculate the LCM
