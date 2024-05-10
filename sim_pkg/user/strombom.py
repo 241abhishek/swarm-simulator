@@ -52,6 +52,8 @@ def read_from_txt(filepath):
             f_N = float(lines[11].split(" = ")[1])
             shepherd_speed = float(lines[12].split(" = ")[1])
             sts_con = float(lines[13].split(" = ")[1])
+            goal_x = float(lines[14].split(" = ")[1])
+            goal_y = float(lines[15].split(" = ")[1])
         except:
             pass
 
@@ -64,7 +66,7 @@ def shepherd(robot):
     """
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
-    print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}")
+    print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
 
     # empty desired vector initialization
     vec_desired = np.array([0.0, 0.0])
