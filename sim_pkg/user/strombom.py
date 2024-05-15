@@ -41,7 +41,7 @@ arena_rep = 0.5
 # diff drive motion model parameters
 wheel_radius = 0.015
 wheel_distance = 0.08
-point_dist = 0.2 # distance between the point whoose velocity is to be calculated and the robot center
+point_dist = 0.08 # distance between the point whoose velocity is to be calculated and the robot center
 
 # create a function to parse a txt file and assign the values to the user variables
 def read_from_txt(filepath):
@@ -67,6 +67,7 @@ def read_from_txt(filepath):
             goal_y = float(lines[15].split(" = ")[1])
         except:
             pass
+    f.close()
 
 def diff_drive_motion_model(des_vec, pose) -> np.array:
     """
@@ -111,7 +112,7 @@ def shepherd(robot):
     """
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
-    print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
+    # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
 
     # empty desired vector initialization
     vec_desired = np.array([0.0, 0.0])

@@ -5,6 +5,29 @@ import numpy as np
 import os
 import shutil
 
+
+# create global variables to store user input
+arena_threshold = 1.0
+
+goal_x = 0.0 # x-coordinate of the goal
+goal_y = 0.0 # y-coordinate of the goal
+
+# create a function to parse a txt file and assign the values to the user variables (goal_x, goal_y)
+def read_from_txt(filepath):
+    global goal_x, goal_y
+    with open(filepath, 'r') as file:
+        lines = file.readlines()
+        try:
+            # check to see if the line contains the goal_x and goal_y values
+            for line in lines:
+                if "goal_x" in line:
+                    goal_x = float(line.split(" = ")[1])
+                elif "goal_y" in line:
+                    goal_y = float(line.split(" = ")[1])
+        except:
+            pass
+    file.close()
+
 class GUI:
     def __init__(self, config_data, trial_number):
         '''
@@ -51,6 +74,9 @@ class GUI:
         '''
         self.window.fill((0, 0, 0)) # Clear the screen before redrawing (color it black)
 
+        # read the goal coordinates from the txt file
+        read_from_txt("user/strombom_variables.txt")
+
         # Draw robots
         for robot in state:
             # Scale coordinates to screen size
@@ -72,6 +98,16 @@ class GUI:
         # time_text = self.font.render('Real time factor ' + f'{rtf:.2f}x | Real time: ' + f'{real_time:.2f} seconds | Sim time: ' + f'{sim_time:.2f} seconds', 
                                     #  True, (255,255,255))
         # self.window.blit(time_text, (170, 100)) # Blit is like the "draw" equivalent for text/images
+            
+        # Draw arena boundaries for the sheep
+        # convert arena_threshold to screen coordinates
+        arena_threshold_screen = arena_threshold * self.x_fac
+        # draw the arena boundaries
+        pygame.draw.rect(self.window, (255, 255, 255), (0 + arena_threshold_screen, 0 + arena_threshold_screen, self.screen_length - 2*arena_threshold_screen, self.screen_height - 2*arena_threshold_screen), 2)
+
+        # Draw goal
+        goal_position = self.to_pygame([goal_x, goal_y])
+        pygame.draw.circle(self.window, (0, 255, 0), goal_position, 20, 2)
 
         # Update the display to show the latest changes
         pygame.display.flip()
