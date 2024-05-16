@@ -1,2 +1,2 @@
-shepherd_goal_x = 2.382703921236482
-shepherd_goal_y = 2.2389348502191995
+shepherd_goal_x = -1.7150301600471816
+shepherd_goal_y = 5.347139067585495

@@ -66,9 +66,9 @@ def strombom_create_trackbars():
     # set the default values of the user variables
     cv2.setTrackbarPos("n", "User Variables", 5)
     cv2.setTrackbarPos("r_s", "User Variables", 65)
-    cv2.setTrackbarPos("r_a", "User Variables", 5)
-    cv2.setTrackbarPos("p_a", "User Variables", 60)
-    cv2.setTrackbarPos("c", "User Variables", 5)
+    cv2.setTrackbarPos("r_a", "User Variables", 2)
+    cv2.setTrackbarPos("p_a", "User Variables", 20)
+    cv2.setTrackbarPos("c", "User Variables", 11)
     cv2.setTrackbarPos("p_s", "User Variables", 10)
     cv2.setTrackbarPos("h", "User Variables", 5)
     cv2.setTrackbarPos("e", "User Variables", 30)

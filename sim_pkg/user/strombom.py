@@ -42,8 +42,8 @@ wheel_radius = 0.015
 wheel_distance = 0.08
 point_dist = 0.08 # distance between the point whoose velocity is to be calculated and the robot center
 
-agg_sheep_msgs = [] # aggregated sheep messages
-msg_count = 0
+agg_shepherd_msgs = [] # aggregated shepherd messages
+shepherd_msg_count = 0
 
 # create a function to parse a txt file and assign the values to the user variables
 def read_from_txt(filepath):
@@ -130,7 +130,7 @@ def shepherd(robot):
     Args:
         robot (robot_instance): The robot object to control.
     """
-    global agg_sheep_msgs, msg_count
+    global agg_shepherd_msgs, shepherd_msg_count
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
     # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
@@ -154,29 +154,29 @@ def shepherd(robot):
             # check if any other sheep are within the repulsion distance
             # first isolate the sheep messages using the virtual id in the message
             sheep_msgs = [msg for msg in msgs if msg[3] != 0]
-            msg_count += 1
+            shepherd_msg_count += 1
             # aggregate the sheep messages
             # only store 1 message per sheep, check using the virtual id
             for i in range(len(sheep_msgs)):
-                if len(agg_sheep_msgs) == 0:
-                    agg_sheep_msgs.append(sheep_msgs[i])
+                if len(agg_shepherd_msgs) == 0:
+                    agg_shepherd_msgs.append(sheep_msgs[i])
                 else:
                     found = False
-                    for j in range(len(agg_sheep_msgs)):
-                        if sheep_msgs[i][3] == agg_sheep_msgs[j][3]:
+                    for j in range(len(agg_shepherd_msgs)):
+                        if sheep_msgs[i][3] == agg_shepherd_msgs[j][3]:
                             found = True
                             break
                     if not found:
-                        agg_sheep_msgs.append(sheep_msgs[i])
+                        agg_shepherd_msgs.append(sheep_msgs[i])
 
             # only proceed with the rest of the code every 10 msgs cycles
-            if msg_count == 10:
+            if shepherd_msg_count == 10:
                 # reset the timestep count
-                msg_count = 0
-                sheep_msgs = agg_sheep_msgs
+                shepherd_msg_count = 0
+                sheep_msgs = agg_shepherd_msgs
                 # print(f"Aggregated Sheep Messages: {sheep_msgs}")
                 # reset the aggregated sheep messages
-                agg_sheep_msgs = []
+                agg_shepherd_msgs = []
             else:
                 return
 
@@ -189,6 +189,7 @@ def shepherd(robot):
 
             # check if the closest sheep is within the repulsion distance
             if closest_neighbors[0][0] < 3*r_a:
+                # print("Sheep within repulsion distance")
                 robot.set_vel(0.0, 0.0) # stop moving
             else:
                 # calculate the Global Center of Mass (GCM) of the sheep flock
@@ -196,9 +197,6 @@ def shepherd(robot):
                 for i in range(len(sheep_msgs)):
                     gcm = np.add(gcm, np.array([sheep_msgs[i][0], sheep_msgs[i][1]]))
                 gcm = gcm/len(sheep_msgs)
-
-                # write the gcm point to a txt file
-                write_points_to_txt("user/shepherd_goal.txt", gcm)
 
                 # check if all the sheep are within the f_N distance from the GCM
                 all_within_f_N = True
@@ -229,7 +227,7 @@ def shepherd(robot):
                     # print(f"Current Position: {pose_t}")
                     # print(f"Goal Point: {goal_point}")
 
-                    # write the goal point to a txt file
+                    # # write the goal point to a txt file
                     # write_points_to_txt("user/shepherd_goal.txt", goal_point)
 
                     # calculate the vector to the goal point
@@ -251,10 +249,10 @@ def shepherd(robot):
                             farthest_sheep = np.array([sheep_msgs[i][0], sheep_msgs[i][1]])
 
                     # calculate the equation of the line connecting the GCM and the farthest sheep
-                    if (gcm[0] - goal_pos[0]) == 0:
+                    if (gcm[0] - farthest_sheep[0]) == 0:
                         theta = math.pi/2
                     else:
-                        m = (gcm[1] - goal_pos[1])/(gcm[0] - goal_pos[0])
+                        m = (gcm[1] - farthest_sheep[1])/(gcm[0] - farthest_sheep[0])
                         _c = gcm[1] - m*gcm[0]
                         theta = math.atan(m)
                     # calculate the collecting position (p_c) behind the farthest sheep
@@ -428,17 +426,22 @@ def sheep(robot):
                     # calculate the local center of mass (LCM) of the n nearest neighbors
                     # calculate the LCM
                     lcm_num = min(n, len(closest_neighbors))
-                    lcm = np.array([0.0, 0.0])
-                    for i in range(lcm_num):
-                        lcm = np.add(lcm, np.array([sheep_msgs[closest_neighbors[i][1]][0], sheep_msgs[closest_neighbors[i][1]][1]]))
-                    lcm = lcm/n
+                    if lcm_num > 0:
+                        lcm = np.array([0.0, 0.0])
+                        for i in range(lcm_num):
+                            lcm = np.add(lcm, np.array([sheep_msgs[closest_neighbors[i][1]][0], sheep_msgs[closest_neighbors[i][1]][1]]))
+                        lcm = lcm/lcm_num
 
-                    # calculate the vector to the LCM
-                    vec_attraction = np.array([lcm[0]-pose_t[0], lcm[1]-pose_t[1]])
-                    vec_attraction = vec_attraction/np.linalg.norm(vec_attraction)
-                    # add the vector to the desired vector
-                    vec_desired = np.add(vec_desired, c*vec_attraction)
-                    vec_desired = vec_desired/np.linalg.norm(vec_desired)
+                        # write the LCM to a txt file
+                        if robot.virtual_id == 1:
+                            write_points_to_txt("user/shepherd_goal.txt", lcm)
+
+                        # calculate the vector to the LCM
+                        vec_attraction = np.array([lcm[0]-pose_t[0], lcm[1]-pose_t[1]])
+                        vec_attraction = vec_attraction/np.linalg.norm(vec_attraction)
+                        # add the vector to the desired vector
+                        vec_desired = np.add(vec_desired, c*vec_attraction)
+                        vec_desired = vec_desired/np.linalg.norm(vec_desired)
 
         # move only if the sheep is prompted to move
         if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
