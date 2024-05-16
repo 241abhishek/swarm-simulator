@@ -1,5 +1,5 @@
 {
-    "NUMBER_OF_ROBOTS": 2,
+    "NUMBER_OF_ROBOTS": 3,
     "COMM_RANGE": 50.0, 
     "PACKET_SUCCESS_PERC": 1.0, 
     "NUM_OF_MSGS": 36, 
