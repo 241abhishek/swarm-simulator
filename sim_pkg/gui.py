@@ -11,8 +11,10 @@ arena_threshold = 1.0
 
 goal_x = 0.0 # x-coordinate of the goal
 goal_y = 0.0 # y-coordinate of the goal
+shepherd_goal_x = 0.0 # x-coordinate of the shepherd goal
+shepherd_goal_y = 0.0 # y-coordinate of the shepherd goal
 
-# create a function to parse a txt file and assign the values to the user variables (goal_x, goal_y)
+# create a function to parse a txt file and assign the values to variables
 def read_from_txt(filepath):
     global goal_x, goal_y
     with open(filepath, 'r') as file:
@@ -24,6 +26,22 @@ def read_from_txt(filepath):
                     goal_x = float(line.split(" = ")[1])
                 elif "goal_y" in line:
                     goal_y = float(line.split(" = ")[1])
+        except:
+            pass
+    file.close()
+
+
+def read_shepherd_goal(filepath):
+    global shepherd_goal_x, shepherd_goal_y
+    with open(filepath, 'r') as file:
+        lines = file.readlines()
+        try:
+            # check to see if the line contains the shepherd_goal_x and shepherd_goal_y values
+            for line in lines:
+                if "shepherd_goal_x" in line:
+                    shepherd_goal_x = float(line.split(" = ")[1])
+                elif "shepherd_goal_y" in line:
+                    shepherd_goal_y = float(line.split(" = ")[1])
         except:
             pass
     file.close()
@@ -77,6 +95,9 @@ class GUI:
         # read the goal coordinates from the txt file
         read_from_txt("user/strombom_variables.txt")
 
+        # read the shepherd goal coordinates from the txt file
+        read_shepherd_goal("user/shepherd_goal.txt")
+
         # Draw robots
         for robot in state:
             # Scale coordinates to screen size
@@ -108,6 +129,10 @@ class GUI:
         # Draw goal
         goal_position = self.to_pygame([goal_x, goal_y])
         pygame.draw.circle(self.window, (0, 255, 0), goal_position, 20, 2)
+
+        # # Draw shepherd goal as a blue point
+        shepherd_goal_position = self.to_pygame([shepherd_goal_x, shepherd_goal_y])
+        pygame.draw.circle(self.window, (0, 0, 255), shepherd_goal_position, 5)
 
         # Update the display to show the latest changes
         pygame.display.flip()

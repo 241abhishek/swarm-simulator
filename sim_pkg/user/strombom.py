@@ -69,6 +69,24 @@ def read_from_txt(filepath):
             pass
     f.close()
 
+# create a function to write goal positions for the shepherd to a txt file
+def write_points_to_txt(filepath, goal_point):
+    """
+    Function to write the goal position for the shepherd to a txt file.
+
+    Args:
+        filepath (str): The path to the txt file.
+        goal_point (np.array): The goal position for the shepherd.
+
+    Returns:
+        None
+    """
+
+    with open(filepath, "w") as f:
+        f.write(f"shepherd_goal_x = {goal_point[0]}\n")
+        f.write(f"shepherd_goal_y = {goal_point[1]}\n")
+    f.close()
+
 def diff_drive_motion_model(des_vec, pose) -> np.array:
     """
     Function to calculate the wheel velocities for a differential drive robot.
@@ -157,7 +175,7 @@ def shepherd(robot):
 
                 if all_within_f_N:
                     # driving mode
-                    # print("Driving mode")
+                    print("Driving mode")
                     # calculate the equation of the line connecting the GCM and the goal position
                     if (gcm[0] - goal_pos[0]) == 0:
                         theta = math.pi/2
@@ -173,6 +191,11 @@ def shepherd(robot):
                     dist_2 = np.linalg.norm(goal_point_2 - goal_pos)
                     # set goal point to be the point that is farther from the goal position
                     goal_point = goal_point_1 if dist_1 > dist_2 else goal_point_2
+                    print(f"Current Position: {pose_t}")
+                    print(f"Goal Point: {goal_point}")
+
+                    # write the goal point to a txt file
+                    write_points_to_txt("user/shepherd_goal.txt", goal_point)
 
                     # calculate the vector to the goal point
                     vec_goal = np.array([goal_point[0]-pose_t[0], goal_point[1]-pose_t[1]])
@@ -182,7 +205,7 @@ def shepherd(robot):
                     vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
                 else:
                     # collecting mode
-                    # print("Collecting mode")
+                    print("Collecting mode")
                     # calculate the position of the sheep farthest from the GCM
                     farthest_sheep = np.array([0.0, 0.0])
                     max_dist = 0.0
@@ -207,6 +230,9 @@ def shepherd(robot):
                     dist_2 = np.linalg.norm(goal_point_2 - gcm)
                     # set goal point to be the point that is farther from the gcm
                     goal_point = goal_point_1 if dist_1 > dist_2 else goal_point_2
+
+                    # write the goal point to a txt file
+                    write_points_to_txt("user/shepherd_goal.txt", goal_point)
 
                     # calculate the vector to the goal point
                     vec_goal = np.array([goal_point[0]-pose_t[0], goal_point[1]-pose_t[1]])
