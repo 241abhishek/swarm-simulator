@@ -30,7 +30,6 @@ sts_con = 0.5 # steering constant for the shepherd
 # goal position for the shepherd
 goal_x = -7.5/2.0
 goal_y = -7.5/2.0
-goal_pos = np.array([goal_x, goal_y]) # goal position for the shepherd
 
 # arena dimensions
 arena_x = 7.5
@@ -134,6 +133,8 @@ def shepherd(robot):
 
     # empty desired vector initialization
     vec_desired = np.array([0.0, 0.0])
+
+    goal_pos = np.array([goal_x, goal_y]) # goal position for the shepherd
 
     # get robot pose
     pose_t = robot.get_pose()
