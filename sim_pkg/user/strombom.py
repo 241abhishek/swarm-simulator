@@ -43,7 +43,7 @@ wheel_distance = 0.08
 point_dist = 0.08 # distance between the point whoose velocity is to be calculated and the robot center
 
 agg_sheep_msgs = [] # aggregated sheep messages
-timestep_count = 0
+msg_count = 0
 
 # create a function to parse a txt file and assign the values to the user variables
 def read_from_txt(filepath):
@@ -130,7 +130,7 @@ def shepherd(robot):
     Args:
         robot (robot_instance): The robot object to control.
     """
-    global agg_sheep_msgs, timestep_count
+    global agg_sheep_msgs, msg_count
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
     # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
@@ -150,20 +150,32 @@ def shepherd(robot):
 
         msgs = robot.recv_msg() # receive messages from other robots
         if len(msgs) > 0:
-            print(f"Received messages: {msgs}")
+            # print(f"Received messages: {msgs}")
             # check if any other sheep are within the repulsion distance
             # first isolate the sheep messages using the virtual id in the message
             sheep_msgs = [msg for msg in msgs if msg[3] != 0]
+            msg_count += 1
             # aggregate the sheep messages
-            for msg in sheep_msgs:
-                agg_sheep_msgs.append(msg)
-            timestep_count += 1
+            # only store 1 message per sheep, check using the virtual id
+            for i in range(len(sheep_msgs)):
+                if len(agg_sheep_msgs) == 0:
+                    agg_sheep_msgs.append(sheep_msgs[i])
+                else:
+                    found = False
+                    for j in range(len(agg_sheep_msgs)):
+                        if sheep_msgs[i][3] == agg_sheep_msgs[j][3]:
+                            found = True
+                            break
+                    if not found:
+                        agg_sheep_msgs.append(sheep_msgs[i])
 
-            # only proceed with the rest of the code every 10 time steps
-            if timestep_count == 10:
+            # only proceed with the rest of the code every 10 msgs cycles
+            if msg_count == 10:
                 # reset the timestep count
-                timestep_count = 0
+                msg_count = 0
                 sheep_msgs = agg_sheep_msgs
+                # print(f"Aggregated Sheep Messages: {sheep_msgs}")
+                # reset the aggregated sheep messages
                 agg_sheep_msgs = []
             else:
                 return
