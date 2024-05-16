@@ -20,6 +20,8 @@ def flocking_write_to_txt(filepath, d, r, a, k, m, s, n):
         f.write(f"s = {s}\n")
         f.write(f"n = {n}\n")
 
+        f.close()
+
 def strombom_write_to_txt(filepath, n, r_s, r_a, p_a, c, p_s, h, e, p, sheep_speed, st_con, f_N, shepherd_speed, sts_con, goal_x, goal_y):
     with open(filepath, "w") as f:
         f.write(f"n = {n}\n")
@@ -38,6 +40,8 @@ def strombom_write_to_txt(filepath, n, r_s, r_a, p_a, c, p_s, h, e, p, sheep_spe
         f.write(f"sts_con = {sts_con}\n")
         f.write(f"goal_x = {goal_x}\n")
         f.write(f"goal_y = {goal_y}\n")
+
+        f.close()
 
 def strombom_create_trackbars():
     # create trackbars to adjust the values of the user variables
