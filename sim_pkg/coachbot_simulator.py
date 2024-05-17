@@ -52,7 +52,7 @@ def strombom_create_trackbars():
     cv2.createTrackbar("p_a", "User Variables", 0, 100, lambda x: None)
     cv2.createTrackbar("c", "User Variables", 0, 100, lambda x: None)
     cv2.createTrackbar("p_s", "User Variables", 0, 100, lambda x: None)
-    cv2.createTrackbar("h", "User Variables", 0, 100, lambda x: None)
+    cv2.createTrackbar("h", "User Variables", 0, 10, lambda x: None)
     cv2.createTrackbar("e", "User Variables", 0, 100, lambda x: None)
     cv2.createTrackbar("p", "User Variables", 0, 100, lambda x: None)
     cv2.createTrackbar("sheep_speed", "User Variables", 0, 100, lambda x: None)

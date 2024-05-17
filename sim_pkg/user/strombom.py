@@ -1,6 +1,7 @@
 import struct
 import numpy as np
 import math
+import copy
 import random
 
 # default values (scaled) from the original paper
@@ -40,10 +41,12 @@ arena_rep = 0.5
 # diff drive motion model parameters
 wheel_radius = 0.015
 wheel_distance = 0.08
-point_dist = 0.08 # distance between the point whoose velocity is to be calculated and the robot center
+point_dist = 0.2 # distance between the point whoose velocity is to be calculated and the robot center
 
 agg_shepherd_msgs = [] # aggregated shepherd messages
 shepherd_msg_count = 0
+
+shepherd_prev_vel = np.array([0.0, 0.0]) # previous velocity of the shepherd
 
 # create a function to parse a txt file and assign the values to the user variables
 def read_from_txt(filepath):
@@ -107,6 +110,9 @@ def diff_drive_motion_model(des_vec, pose) -> np.array:
     # calculate the angle difference
     angle_diff = des_angle - pose[2]
 
+    # normalize the angle difference
+    angle_diff = (angle_diff + math.pi) % (2*math.pi) - math.pi
+
     # calculate body frame forward velocity
     v_b = math.cos(angle_diff)
 
@@ -114,8 +120,8 @@ def diff_drive_motion_model(des_vec, pose) -> np.array:
     w_b = math.sin(angle_diff) / point_dist
 
     # calculate the wheel velocities
-    v_l = (2*v_b + w_b*wheel_distance) / 2
-    v_r = (6*v_b - w_b*wheel_distance) / 2
+    v_l = (2*v_b - w_b*wheel_distance) / 2
+    v_r = (2*v_b + w_b*wheel_distance) / 2
 
     # convert the wheel velocities to angular velocities
     w_l = v_l / wheel_radius
@@ -130,7 +136,7 @@ def shepherd(robot):
     Args:
         robot (robot_instance): The robot object to control.
     """
-    global agg_shepherd_msgs, shepherd_msg_count
+    global agg_shepherd_msgs, shepherd_msg_count, shepherd_prev_vel
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
     # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
@@ -143,6 +149,13 @@ def shepherd(robot):
     # get robot pose
     pose_t = robot.get_pose()
     if pose_t: # check if pose is valid before using
+        
+        # make a copy of the pose
+        pose_copy = copy.deepcopy(pose_t)
+        
+        # calculate the position of the control point from the robot center
+        control_point = np.array([pose_t[0] + point_dist*np.cos(pose_t[2]), pose_t[1] + point_dist*np.sin(pose_t[2]), pose_t[2]])
+        pose_t = control_point
         
         # calculate current heading
         vec_curr = np.array([np.cos(pose_t[2]), np.sin(pose_t[2])])
@@ -276,28 +289,33 @@ def shepherd(robot):
                     vec_desired = np.add(vec_desired, vec_goal)
                     vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
 
-                # calculate the error in heading wrt the desired movement direction
-                heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
+                # # calculate the error in heading wrt the desired movement direction
+                # heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
 
-                if heading_error > 0:
-                    robot.set_vel(shepherd_speed, shepherd_speed + shepherd_speed*sts_con*(abs(heading_error)/np.pi))
-                else:
-                    robot.set_vel(shepherd_speed + shepherd_speed*sts_con*(abs(heading_error)/np.pi), shepherd_speed)
+                # if heading_error > 0:
+                #     robot.set_vel(shepherd_speed, shepherd_speed + shepherd_speed*sts_con*(abs(heading_error)/np.pi))
+                # else:
+                #     robot.set_vel(shepherd_speed + shepherd_speed*sts_con*(abs(heading_error)/np.pi), shepherd_speed)
                     
-                # # calculate the wheel velocities using the differential drive motion model
-                # wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
+                # add intertia to the shepherd using the previous velocity
+                vec_desired = h*shepherd_prev_vel + (1-h)*vec_desired
+                vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
+                shepherd_prev_vel = vec_desired 
 
-                # # normalize and scale the wheel velocities
-                # max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
-                # wheel_velocities = wheel_velocities/max_wheel_vel
-                # wheel_velocities = wheel_velocities*shepherd_speed
+                # calculate the wheel velocities using the differential drive motion model
+                wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
 
-                # # set the wheel velocities
-                # robot.set_vel(wheel_velocities[0], wheel_velocities[1])
+                # normalize and scale the wheel velocities
+                max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
+                wheel_velocities = wheel_velocities/max_wheel_vel
+                wheel_velocities = wheel_velocities*shepherd_speed
+
+                # set the wheel velocities
+                robot.set_vel(wheel_velocities[0], wheel_velocities[1])
 
         # construct message to send to other robots
-        pose_t.append(float(robot.virtual_id))
-        msg = pose_t
+        pose_copy.append(float(robot.virtual_id))
+        msg = pose_copy
         robot.send_msg(msg)
 
 
@@ -340,35 +358,35 @@ def sheep(robot):
             vec_desired = np.add(vec_desired, arena_rep*vec_boundary)
             vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
 
-            # move only if the sheep is prompted to move
-            if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
-                # calculate the error in heading wrt the desired movement direction
-                heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
-
-                if heading_error > 0:
-                    robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
-                else:
-                    robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
-            else:
-                # print(f"Stopping sheep {robot.virtual_id} near the arena boundary")
-                robot.set_vel(0.0, 0.0) # stop moving
-
             # # move only if the sheep is prompted to move
             # if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
-            #     # use the differential drive motion model to calculate the wheel velocities
-            #     wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
+            #     # calculate the error in heading wrt the desired movement direction
+            #     heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
 
-            #     # normalize and scale the wheel velocities
-            #     max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
-            #     wheel_velocities = wheel_velocities/max_wheel_vel
-            #     wheel_velocities = wheel_velocities*sheep_speed
-
-            #     # set the wheel velocities
-            #     robot.set_vel(wheel_velocities[0], wheel_velocities[1])
-
+            #     if heading_error > 0:
+            #         robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
+            #     else:
+            #         robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
             # else:
             #     # print(f"Stopping sheep {robot.virtual_id} near the arena boundary")
             #     robot.set_vel(0.0, 0.0) # stop moving
+
+            # move only if the sheep is prompted to move
+            if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
+                # use the differential drive motion model to calculate the wheel velocities
+                wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
+
+                # normalize and scale the wheel velocities
+                max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
+                wheel_velocities = wheel_velocities/max_wheel_vel
+                wheel_velocities = wheel_velocities*sheep_speed
+
+                # set the wheel velocities
+                robot.set_vel(wheel_velocities[0], wheel_velocities[1])
+
+            else:
+                # print(f"Stopping sheep {robot.virtual_id} near the arena boundary")
+                robot.set_vel(0.0, 0.0) # stop moving
             
             # construct message to send to other robots
             pose_t.append(float(robot.virtual_id))
@@ -455,32 +473,32 @@ def sheep(robot):
                         vec_desired = np.add(vec_desired, c*vec_attraction)
                         vec_desired = vec_desired/np.linalg.norm(vec_desired)
 
-        # move only if the sheep is prompted to move
-        if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
-            # calculate the error in heading wrt the desired movement direction
-            heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
-
-            if heading_error > 0:
-                robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
-            else:
-                robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
-        else:
-            robot.set_vel(0.0, 0.0) # stop moving
-                    
         # # move only if the sheep is prompted to move
         # if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
-        #     # use the differential drive motion model to calculate the wheel velocities
-        #     wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
+        #     # calculate the error in heading wrt the desired movement direction
+        #     heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
 
-        #     # normalize and scale the wheel velocities
-        #     max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
-        #     wheel_velocities = wheel_velocities/max_wheel_vel
-        #     wheel_velocities = wheel_velocities*sheep_speed
-
-        #     # set the wheel velocities
-        #     robot.set_vel(wheel_velocities[0], wheel_velocities[1])
+        #     if heading_error > 0:
+        #         robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
+        #     else:
+        #         robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
         # else:
         #     robot.set_vel(0.0, 0.0) # stop moving
+                    
+        # move only if the sheep is prompted to move
+        if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
+            # use the differential drive motion model to calculate the wheel velocities
+            wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
+
+            # normalize and scale the wheel velocities
+            max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
+            wheel_velocities = wheel_velocities/max_wheel_vel
+            wheel_velocities = wheel_velocities*sheep_speed
+
+            # set the wheel velocities
+            robot.set_vel(wheel_velocities[0], wheel_velocities[1])
+        else:
+            robot.set_vel(0.0, 0.0) # stop moving
         
         # construct message to send to other robots
         pose_t.append(float(robot.virtual_id))
