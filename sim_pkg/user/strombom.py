@@ -228,7 +228,7 @@ def shepherd(robot):
                     # print(f"Goal Point: {goal_point}")
 
                     # # write the goal point to a txt file
-                    # write_points_to_txt("user/shepherd_goal.txt", goal_point)
+                    write_points_to_txt("user/shepherd_goal.txt", goal_point)
 
                     # calculate the vector to the goal point
                     vec_goal = np.array([goal_point[0]-pose_t[0], goal_point[1]-pose_t[1]])
@@ -267,7 +267,7 @@ def shepherd(robot):
                     # print(f"Goal Point: {goal_point}")
 
                     # write the goal point to a txt file
-                    # write_points_to_txt("user/shepherd_goal.txt", goal_point)
+                    write_points_to_txt("user/shepherd_goal.txt", goal_point)
 
                     # calculate the vector to the goal point
                     vec_goal = np.array([goal_point[0]-pose_t[0], goal_point[1]-pose_t[1]])
@@ -382,6 +382,22 @@ def sheep(robot):
             # check if any other sheep are within the repulsion distance
             # first isolate the sheep messages using the virtual id in the message
             sheep_msgs = [msg for msg in msgs if msg[3] != 0]
+
+            # ensure that there is only one message per sheep
+            agg_sheep_msgs = []
+            for i in range(len(sheep_msgs)):
+                if len(agg_sheep_msgs) == 0:
+                    agg_sheep_msgs.append(sheep_msgs[i])
+                else:
+                    found = False
+                    for j in range(len(agg_sheep_msgs)):
+                        if sheep_msgs[i][3] == agg_sheep_msgs[j][3]:
+                            found = True
+                            break
+                    if not found:
+                        agg_sheep_msgs.append(sheep_msgs[i])
+            sheep_msgs = agg_sheep_msgs
+
             # sort the sheep messages based on distance
             closest_neighbors = []
             for i in range(len(sheep_msgs)):
@@ -431,10 +447,6 @@ def sheep(robot):
                         for i in range(lcm_num):
                             lcm = np.add(lcm, np.array([sheep_msgs[closest_neighbors[i][1]][0], sheep_msgs[closest_neighbors[i][1]][1]]))
                         lcm = lcm/lcm_num
-
-                        # write the LCM to a txt file
-                        if robot.virtual_id == 1:
-                            write_points_to_txt("user/shepherd_goal.txt", lcm)
 
                         # calculate the vector to the LCM
                         vec_attraction = np.array([lcm[0]-pose_t[0], lcm[1]-pose_t[1]])
