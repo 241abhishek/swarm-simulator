@@ -6,7 +6,7 @@
     "MSG_SIZE": 1792,
     "MSG_TYPE": 0,
     "TIME_ASYNC": 0,
-    "REAL_TIME_FACTOR": 50.0,
+    "REAL_TIME_FACTOR": 10.0,
     "SIM_TIME_STEP": 0.05,
     "SIM_TIME": 50000,
     "WIDTH": 15, 

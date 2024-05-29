@@ -3,6 +3,7 @@ import numpy as np
 import math
 import copy
 import random
+import time
 
 # default values (scaled) from the original paper
 # sheep parameters
@@ -51,9 +52,11 @@ shepherd_msg_count = 0
 prev_shepherd_pos = np.array([0.0, 0.0]) # previous position of the shepherd
 shepherd_prev_vel = np.array([0.0, 0.0]) # previous velocity of the shepherd
 
+k = 1.2 # heading constant
+
 # create a function to parse a txt file and assign the values to the user variables
 def read_from_txt(filepath):
-    global N, n, r_s, r_a, p_a, c, p_s, h, e, p, f_N, sheep_speed, shepherd_speed, st_con, sts_con, goal_x, goal_y
+    global N, n, r_s, r_a, p_a, c, p_s, h, e, p, f_N, sheep_speed, shepherd_speed, st_con, sts_con, goal_x, goal_y, k
     with open(filepath, "r") as f:
         lines = f.readlines()
         try:
@@ -73,6 +76,7 @@ def read_from_txt(filepath):
             sts_con = float(lines[13].split(" = ")[1])
             goal_x = float(lines[14].split(" = ")[1])
             goal_y = float(lines[15].split(" = ")[1])
+            k = float(lines[16].split(" = ")[1])
         except:
             pass
     f.close()
@@ -142,7 +146,7 @@ def shepherd(robot):
     global agg_shepherd_msgs, shepherd_msg_count, shepherd_prev_vel
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
-    # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}")
+    # print(f" User Variables: N={N}, n={n}, r_s={r_s}, r_a={r_a}, p_a={p_a}, c={c}, p_s={p_s}, h={h}, e={e}, p={p}, f_N={f_N}, sheep_speed={sheep_speed}, st_con={st_con}, shepherd_speed={shepherd_speed}, sts_con={sts_con}, goal_x={goal_x}, goal_y={goal_y}, k={k}")
 
     # empty desired vector initialization
     vec_desired = np.array([0.0, 0.0])
@@ -429,6 +433,10 @@ def sheep(robot):
 
                 # set the wheel velocities
                 robot.set_vel(wheel_velocities[0], wheel_velocities[1])
+
+                # wait for a few time steps
+                time.sleep(0.01)
+                
             else:
             #     print(f"Stopping sheep {robot.virtual_id}")
             #     # print(vec_desired)
@@ -535,7 +543,47 @@ def sheep(robot):
                 # add the vector to the desired vector
                 vec_desired = np.add(vec_desired, p_a*vec_repulsion)
                 vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
+
+                # # move only if the sheep is prompted to move
+                # if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
+                #     # use the differential drive motion model to calculate the wheel velocities
+                #     wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
+
+                #     # normalize and scale the wheel velocities
+                #     max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
+                #     wheel_velocities = wheel_velocities/max_wheel_vel
+                #     wheel_velocities = wheel_velocities*sheep_speed
+
+                #     # set the wheel velocities
+                #     robot.set_vel(wheel_velocities[0], wheel_velocities[1])
+                # else:
+                # #     print(f"Stopping sheep {robot.virtual_id}")
+                # #     # print(vec_desired)
+                #     robot.set_vel(0.0, 0.0) # stop moving
                 
+                # # construct message to send to other robots
+                # pose_copy.append(float(robot.virtual_id))
+                # msg = pose_copy
+                # robot.send_msg(msg)
+
+                # return
+
+            # calculate the average heading of the neighbors within f_N distance
+            avg_heading = 0.0
+            within_f_N = 0
+            for i in range(len(closest_neighbors)):
+                if closest_neighbors[i][0] < f_N:
+                    within_f_N += 1
+                    avg_heading += sheep_msgs[closest_neighbors[i][1]][2]
+            if within_f_N > 0:
+                avg_heading = avg_heading/within_f_N
+                # calculate the vector to the average heading
+                vec_heading = np.array([np.cos(avg_heading), np.sin(avg_heading)])
+                vec_heading = vec_heading/np.linalg.norm(vec_heading) # normalize the vector
+                # add the vector to the desired vector
+                vec_desired = np.add(vec_desired, k*vec_heading)
+                vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
+
             # calculate the distance to the shepherd
             # first isolate the shepherd message using the virtual id in the message
             shepherd_msg = [msg for msg in msgs if msg[3] == 0]

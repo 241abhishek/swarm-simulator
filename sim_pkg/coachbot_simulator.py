@@ -22,7 +22,7 @@ def flocking_write_to_txt(filepath, d, r, a, k, m, s, n):
 
         f.close()
 
-def strombom_write_to_txt(filepath, n, r_s, r_a, p_a, c, p_s, h, e, p, sheep_speed, st_con, f_N, shepherd_speed, sts_con, goal_x, goal_y):
+def strombom_write_to_txt(filepath, n, r_s, r_a, p_a, c, p_s, h, e, p, sheep_speed, st_con, f_N, shepherd_speed, sts_con, goal_x, goal_y, k):
     with open(filepath, "w") as f:
         f.write(f"n = {n}\n")
         f.write(f"r_s = {r_s}\n")
@@ -40,6 +40,7 @@ def strombom_write_to_txt(filepath, n, r_s, r_a, p_a, c, p_s, h, e, p, sheep_spe
         f.write(f"sts_con = {sts_con}\n")
         f.write(f"goal_x = {goal_x}\n")
         f.write(f"goal_y = {goal_y}\n")
+        f.write(f"k = {k}\n")
 
         f.close()
 
@@ -62,24 +63,26 @@ def strombom_create_trackbars():
     cv2.createTrackbar("sts_con", "User Variables", 0, 100, lambda x: None)
     cv2.createTrackbar("goal_x", "User Variables", 0, 150, lambda x: None)
     cv2.createTrackbar("goal_y", "User Variables", 0, 150, lambda x: None)
+    cv2.createTrackbar("k", "User Variables", 0, 100, lambda x: None)
 
     # set the default values of the user variables
     cv2.setTrackbarPos("n", "User Variables", 5)
     cv2.setTrackbarPos("r_s", "User Variables", 65)
     cv2.setTrackbarPos("r_a", "User Variables", 4)
     cv2.setTrackbarPos("p_a", "User Variables", 20)
-    cv2.setTrackbarPos("c", "User Variables", 8)
+    cv2.setTrackbarPos("c", "User Variables", 6)
     cv2.setTrackbarPos("p_s", "User Variables", 10)
     cv2.setTrackbarPos("h", "User Variables", 5)
     cv2.setTrackbarPos("e", "User Variables", 30)
     cv2.setTrackbarPos("p", "User Variables", 5)
-    cv2.setTrackbarPos("sheep_speed", "User Variables", 10)
+    cv2.setTrackbarPos("sheep_speed", "User Variables", 50)
     cv2.setTrackbarPos("st_con", "User Variables", 40)
     cv2.setTrackbarPos("f_N", "User Variables", 20)
-    # cv2.setTrackbarPos("shepherd_speed", "User Variables", 25)
+    cv2.setTrackbarPos("shepherd_speed", "User Variables", 75)
     cv2.setTrackbarPos("sts_con", "User Variables", 5)
     cv2.setTrackbarPos("goal_x", "User Variables", 37)
     cv2.setTrackbarPos("goal_y", "User Variables", 37)
+    cv2.setTrackbarPos("k", "User Variables", 12)
 
     while True:
         # Get the current value of the trackbar
@@ -112,8 +115,10 @@ def strombom_create_trackbars():
         goal_x = (goal_x/10) - 7.5 
         goal_y = cv2.getTrackbarPos("goal_y", "User Variables")
         goal_y = (goal_y/10) - 7.5
+        k = cv2.getTrackbarPos("k", "User Variables")
+        k = k/10
 
-        strombom_write_to_txt("user/strombom_variables.txt", n, r_s, r_a, p_a, c, p_s, h, e, p, sheep_speed, st_con, f_N, shepherd_speed, sts_con, goal_x, goal_y)
+        strombom_write_to_txt("user/strombom_variables.txt", n, r_s, r_a, p_a, c, p_s, h, e, p, sheep_speed, st_con, f_N, shepherd_speed, sts_con, goal_x, goal_y, k)
 
         cv2.waitKey(1)
 
