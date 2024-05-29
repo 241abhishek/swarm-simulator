@@ -44,8 +44,11 @@ wheel_distance = 0.08
 point_dist = 0.2 # distance between the point whoose velocity is to be calculated and the robot center
 
 agg_shepherd_msgs = [] # aggregated shepherd messages
+# agg_sheep_msgs = [] # aggregated sheep messages
 shepherd_msg_count = 0
+# sheep_msg_count = 0
 
+prev_shepherd_pos = np.array([0.0, 0.0]) # previous position of the shepherd
 shepherd_prev_vel = np.array([0.0, 0.0]) # previous velocity of the shepherd
 
 # create a function to parse a txt file and assign the values to the user variables
@@ -201,7 +204,8 @@ def shepherd(robot):
             closest_neighbors.sort()
 
             # check if the closest sheep is within the repulsion distance
-            if closest_neighbors[0][0] < 3*r_a:
+            # if closest_neighbors[0][0] < 3*r_a:
+            if closest_neighbors[0][0] < 0.2:
                 # print("Sheep within repulsion distance")
                 robot.set_vel(0.0, 0.0) # stop moving
             else:
@@ -326,6 +330,10 @@ def sheep(robot):
     Args:
         robot (robot_instance): The robot object to control.
     """
+
+    # global agg_sheep_msgs, sheep_msg_count
+    global prev_shepherd_pos
+
     # read the user variables from the txt file
     read_from_txt("user/strombom_variables.txt")
 
@@ -335,6 +343,13 @@ def sheep(robot):
     # get robot pose
     pose_t = robot.get_pose()
     if pose_t: # check if pose is valid before using
+
+        # make a copy of the pose
+        pose_copy = copy.deepcopy(pose_t)
+        
+        # calculate the position of the control point from the robot center
+        # control_point = np.array([pose_t[0] + point_dist*np.cos(pose_t[2]), pose_t[1] + point_dist*np.sin(pose_t[2]), pose_t[2]])
+        # pose_t = control_point
 
         # calculate current heading
         vec_curr = np.array([np.cos(pose_t[2]), np.sin(pose_t[2])])
@@ -389,31 +404,111 @@ def sheep(robot):
                 robot.set_vel(0.0, 0.0) # stop moving
             
             # construct message to send to other robots
-            pose_t.append(float(robot.virtual_id))
-            msg = pose_t
+            pose_copy.append(float(robot.virtual_id))
+            msg = pose_copy
             robot.send_msg(msg)
             
+            return
+        
+
+        # flip a biased coin to determine if the sheep should move in a random direction
+        if random.random() < p:
+            # move in a random direction
+            vec_desired = np.array([random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0)])
+            vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
+
+            # move only if the sheep is prompted to move
+            if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
+                # use the differential drive motion model to calculate the wheel velocities
+                wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
+
+                # normalize and scale the wheel velocities
+                max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
+                wheel_velocities = wheel_velocities/max_wheel_vel
+                wheel_velocities = wheel_velocities*sheep_speed
+
+                # set the wheel velocities
+                robot.set_vel(wheel_velocities[0], wheel_velocities[1])
+            else:
+            #     print(f"Stopping sheep {robot.virtual_id}")
+            #     # print(vec_desired)
+                robot.set_vel(0.0, 0.0) # stop moving
+            
+            # construct message to send to other robots
+            pose_copy.append(float(robot.virtual_id))
+            msg = pose_copy
+            robot.send_msg(msg)
+
             return
 
         msgs = robot.recv_msg() # receive messages from other robots
         if len(msgs) > 0:
-            # check if any other sheep are within the repulsion distance
-            # first isolate the sheep messages using the virtual id in the message
-            sheep_msgs = [msg for msg in msgs if msg[3] != 0]
+            
+            # sheep_msg_count += 1
 
-            # ensure that there is only one message per sheep
+            # # check if any other sheep are within the repulsion distance
+            # # first isolate the sheep messages using the virtual id in the message
+            # sheep_msgs = [msg for msg in msgs if msg[3] != 0]
+
+            # # aggregate the sheep messages
+            # # only store 1 message per sheep, check using the virtual id
+            # for i in range(len(sheep_msgs)):
+            #     if len(agg_sheep_msgs) == 0:
+            #         agg_sheep_msgs.append(sheep_msgs[i])
+            #     else:
+            #         found = False
+            #         for j in range(len(agg_sheep_msgs)):
+            #             if sheep_msgs[i][3] == agg_sheep_msgs[j][3]:
+            #                 found = True
+            #                 break
+            #         if not found:
+            #             agg_sheep_msgs.append(sheep_msgs[i])
+            
+            # # perform the same check for shepherd messages
+            # shepherd_msgs = [msg for msg in msgs if msg[3] == 0]
+            # for i in range(len(shepherd_msgs)):
+            #     if len(agg_sheep_msgs) == 0:
+            #         agg_sheep_msgs.append(shepherd_msgs[i])
+            #     else:
+            #         found = False
+            #         for j in range(len(agg_sheep_msgs)):
+            #             if shepherd_msgs[i][3] == agg_sheep_msgs[j][3]:
+            #                 found = True
+            #                 break
+            #         if not found:
+            #             agg_sheep_msgs.append(shepherd_msgs[i])
+
+            # print(f"Aggregated Sheep Messages: {agg_sheep_msgs}")
+
+            # # only proceed with the rest of the code if len of aggregated sheep messages is 10
+            # if len(agg_sheep_msgs) >= N:
+            #     # reset the timestep count
+            #     sheep_msg_count = 0
+            #     msgs = agg_sheep_msgs # use the aggregated sheep messages as the messages to process
+            #     # reset the aggregated sheep messages
+            #     agg_sheep_msgs = []
+            # else:
+            #     # construct message to send to other robots
+            #     pose_copy.append(float(robot.virtual_id))
+            #     msg = pose_copy
+            #     robot.send_msg(msg)
+            #     return
+
+            # sheep_msgs = [msg for msg in msgs if msg[3] != 0 and msg[3] != robot.virtual_id] # isolate the sheep messages (not including the current sheep and no duplicates)
+
+            sheep_msgs = [msg for msg in msgs if msg[3] != 0] # isolate the sheep messages
+
+            # aggregate the sheep messages
+            # only store 1 message per sheep, check using the virtual id
             agg_sheep_msgs = []
             for i in range(len(sheep_msgs)):
-                if len(agg_sheep_msgs) == 0:
+                found = False
+                for j in range(len(agg_sheep_msgs)):
+                    if sheep_msgs[i][3] == agg_sheep_msgs[j][3]:
+                        found = True
+                        break
+                if not found:
                     agg_sheep_msgs.append(sheep_msgs[i])
-                else:
-                    found = False
-                    for j in range(len(agg_sheep_msgs)):
-                        if sheep_msgs[i][3] == agg_sheep_msgs[j][3]:
-                            found = True
-                            break
-                    if not found:
-                        agg_sheep_msgs.append(sheep_msgs[i])
             sheep_msgs = agg_sheep_msgs
 
             # sort the sheep messages based on distance
@@ -445,7 +540,15 @@ def sheep(robot):
             # first isolate the shepherd message using the virtual id in the message
             shepherd_msg = [msg for msg in msgs if msg[3] == 0]
             shepherd_msg = shepherd_msg[0] if len(shepherd_msg) > 0 else None # pick the first message if multiple messages are received
+
             if shepherd_msg is not None:
+                prev_shepherd_pos = np.array([shepherd_msg[0], shepherd_msg[1]])
+
+            # if shepherd msg is None, use the previous shepherd position
+            if shepherd_msg is None and (prev_shepherd_pos[0] != 0.0 or prev_shepherd_pos[1] != 0.0):
+                shepherd_msg = [prev_shepherd_pos[0], prev_shepherd_pos[1], 0.0, 0.0]
+
+            if shepherd_msg is not None: # redundant check
                 # calculate the distance to the shepherd
                 dist_shepherd = np.linalg.norm(np.array([shepherd_msg[0], shepherd_msg[1]]) - np.array([pose_t[0], pose_t[1]]))
                 if dist_shepherd < r_s:
@@ -498,12 +601,14 @@ def sheep(robot):
             # set the wheel velocities
             robot.set_vel(wheel_velocities[0], wheel_velocities[1])
         else:
+        #     print(f"Stopping sheep {robot.virtual_id}")
+        #     # print(vec_desired)
             robot.set_vel(0.0, 0.0) # stop moving
         
         # construct message to send to other robots
-        pose_t.append(float(robot.virtual_id))
-        msg = pose_t
-        robot.send_msg(msg)    
+        pose_copy.append(float(robot.virtual_id))
+        msg = pose_copy
+        robot.send_msg(msg)
 
 def usr(robot):
     if robot.virtual_id == 0:
