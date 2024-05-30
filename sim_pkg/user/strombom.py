@@ -170,7 +170,6 @@ def shepherd(robot):
 
         msgs = robot.recv_msg() # receive messages from other robots
         if len(msgs) > 0:
-            # print(f"Received messages: {msgs}")
             # check if any other sheep are within the repulsion distance
             # first isolate the sheep messages using the virtual id in the message
             sheep_msgs = [msg for msg in msgs if msg[3] != 0]
@@ -194,7 +193,6 @@ def shepherd(robot):
                 # reset the timestep count
                 shepherd_msg_count = 0
                 sheep_msgs = agg_shepherd_msgs
-                # print(f"Aggregated Sheep Messages: {sheep_msgs}")
                 # reset the aggregated sheep messages
                 agg_shepherd_msgs = []
             else:
@@ -208,7 +206,6 @@ def shepherd(robot):
             closest_neighbors.sort()
 
             # check if the closest sheep is within the repulsion distance
-            # if closest_neighbors[0][0] < 3*r_a:
             if closest_neighbors[0][0] < 0.2:
                 # print("Sheep within repulsion distance")
                 robot.set_vel(0.0, 0.0) # stop moving
@@ -229,7 +226,6 @@ def shepherd(robot):
 
                 if all_within_f_N:
                     # driving mode
-                    # print("Driving mode")
                     # calculate the equation of the line connecting the GCM and the goal position
                     if (gcm[0] - goal_pos[0]) == 0:
                         theta = math.pi/2
@@ -245,8 +241,6 @@ def shepherd(robot):
                     dist_2 = np.linalg.norm(goal_point_2 - goal_pos)
                     # set goal point to be the point that is farther from the goal position
                     goal_point = goal_point_1 if dist_1 > dist_2 else goal_point_2
-                    # print(f"Current Position: {pose_t}")
-                    # print(f"Goal Point: {goal_point}")
 
                     # # write the goal point to a txt file
                     write_points_to_txt("user/shepherd_goal.txt", goal_point)
@@ -259,7 +253,6 @@ def shepherd(robot):
                     vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
                 else:
                     # collecting mode
-                    # print("Collecting mode")
                     # calculate the position of the sheep farthest from the GCM
                     farthest_sheep = np.array([0.0, 0.0])
                     max_dist = 0.0
@@ -284,8 +277,6 @@ def shepherd(robot):
                     dist_2 = np.linalg.norm(goal_point_2 - gcm)
                     # set goal point to be the point that is farther from the gcm
                     goal_point = goal_point_1 if dist_1 > dist_2 else goal_point_2
-                    # print(f"Current Position: {pose_t}")
-                    # print(f"Goal Point: {goal_point}")
 
                     # write the goal point to a txt file
                     write_points_to_txt("user/shepherd_goal.txt", goal_point)
@@ -296,14 +287,6 @@ def shepherd(robot):
                     # add the vector to the desired vector
                     vec_desired = np.add(vec_desired, vec_goal)
                     vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
-
-                # # calculate the error in heading wrt the desired movement direction
-                # heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
-
-                # if heading_error > 0:
-                #     robot.set_vel(shepherd_speed, shepherd_speed + shepherd_speed*sts_con*(abs(heading_error)/np.pi))
-                # else:
-                #     robot.set_vel(shepherd_speed + shepherd_speed*sts_con*(abs(heading_error)/np.pi), shepherd_speed)
                     
                 # add intertia to the shepherd using the previous velocity
                 vec_desired = h*shepherd_prev_vel + (1-h)*vec_desired
@@ -351,17 +334,12 @@ def sheep(robot):
         # make a copy of the pose
         pose_copy = copy.deepcopy(pose_t)
         
-        # calculate the position of the control point from the robot center
-        # control_point = np.array([pose_t[0] + point_dist*np.cos(pose_t[2]), pose_t[1] + point_dist*np.sin(pose_t[2]), pose_t[2]])
-        # pose_t = control_point
-
         # calculate current heading
         vec_curr = np.array([np.cos(pose_t[2]), np.sin(pose_t[2])])
         vec_curr = vec_curr/np.linalg.norm(vec_curr) # normalize the vector
 
         # check if the sheep is near the arena boundary
         if pose_t[0] < -arena_x + arena_threshold or pose_t[0] > arena_x - arena_threshold or pose_t[1] < -arena_y + arena_threshold or pose_t[1] > arena_y - arena_threshold:
-            # print(f"Sheep {robot.virtual_id} is near the arena boundary")
             # calculate the vector perpendicular to the arena boundary
             vec_boundary = np.array([0.0, 0.0])
             if pose_t[0] < -arena_x + arena_threshold :
@@ -377,19 +355,6 @@ def sheep(robot):
             vec_desired = np.add(vec_desired, arena_rep*vec_boundary)
             vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
 
-            # # move only if the sheep is prompted to move
-            # if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
-            #     # calculate the error in heading wrt the desired movement direction
-            #     heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
-
-            #     if heading_error > 0:
-            #         robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
-            #     else:
-            #         robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
-            # else:
-            #     # print(f"Stopping sheep {robot.virtual_id} near the arena boundary")
-            #     robot.set_vel(0.0, 0.0) # stop moving
-
             # move only if the sheep is prompted to move
             if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
                 # use the differential drive motion model to calculate the wheel velocities
@@ -404,16 +369,13 @@ def sheep(robot):
                 robot.set_vel(wheel_velocities[0], wheel_velocities[1])
 
             else:
-                # print(f"Stopping sheep {robot.virtual_id} near the arena boundary")
                 robot.set_vel(0.0, 0.0) # stop moving
             
             # construct message to send to other robots
             pose_copy.append(float(robot.virtual_id))
             msg = pose_copy
             robot.send_msg(msg)
-            
             return
-        
 
         # flip a biased coin to determine if the sheep should move in a random direction
         if random.random() < p:
@@ -438,8 +400,6 @@ def sheep(robot):
                 time.sleep(0.01)
                 
             else:
-            #     print(f"Stopping sheep {robot.virtual_id}")
-            #     # print(vec_desired)
                 robot.set_vel(0.0, 0.0) # stop moving
             
             # construct message to send to other robots
@@ -451,58 +411,6 @@ def sheep(robot):
 
         msgs = robot.recv_msg() # receive messages from other robots
         if len(msgs) > 0:
-            
-            # sheep_msg_count += 1
-
-            # # check if any other sheep are within the repulsion distance
-            # # first isolate the sheep messages using the virtual id in the message
-            # sheep_msgs = [msg for msg in msgs if msg[3] != 0]
-
-            # # aggregate the sheep messages
-            # # only store 1 message per sheep, check using the virtual id
-            # for i in range(len(sheep_msgs)):
-            #     if len(agg_sheep_msgs) == 0:
-            #         agg_sheep_msgs.append(sheep_msgs[i])
-            #     else:
-            #         found = False
-            #         for j in range(len(agg_sheep_msgs)):
-            #             if sheep_msgs[i][3] == agg_sheep_msgs[j][3]:
-            #                 found = True
-            #                 break
-            #         if not found:
-            #             agg_sheep_msgs.append(sheep_msgs[i])
-            
-            # # perform the same check for shepherd messages
-            # shepherd_msgs = [msg for msg in msgs if msg[3] == 0]
-            # for i in range(len(shepherd_msgs)):
-            #     if len(agg_sheep_msgs) == 0:
-            #         agg_sheep_msgs.append(shepherd_msgs[i])
-            #     else:
-            #         found = False
-            #         for j in range(len(agg_sheep_msgs)):
-            #             if shepherd_msgs[i][3] == agg_sheep_msgs[j][3]:
-            #                 found = True
-            #                 break
-            #         if not found:
-            #             agg_sheep_msgs.append(shepherd_msgs[i])
-
-            # print(f"Aggregated Sheep Messages: {agg_sheep_msgs}")
-
-            # # only proceed with the rest of the code if len of aggregated sheep messages is 10
-            # if len(agg_sheep_msgs) >= N:
-            #     # reset the timestep count
-            #     sheep_msg_count = 0
-            #     msgs = agg_sheep_msgs # use the aggregated sheep messages as the messages to process
-            #     # reset the aggregated sheep messages
-            #     agg_sheep_msgs = []
-            # else:
-            #     # construct message to send to other robots
-            #     pose_copy.append(float(robot.virtual_id))
-            #     msg = pose_copy
-            #     robot.send_msg(msg)
-            #     return
-
-            # sheep_msgs = [msg for msg in msgs if msg[3] != 0 and msg[3] != robot.virtual_id] # isolate the sheep messages (not including the current sheep and no duplicates)
 
             sheep_msgs = [msg for msg in msgs if msg[3] != 0] # isolate the sheep messages
 
@@ -544,30 +452,7 @@ def sheep(robot):
                 vec_desired = np.add(vec_desired, p_a*vec_repulsion)
                 vec_desired = vec_desired/np.linalg.norm(vec_desired) # normalize the vector
 
-                # # move only if the sheep is prompted to move
-                # if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
-                #     # use the differential drive motion model to calculate the wheel velocities
-                #     wheel_velocities = diff_drive_motion_model(vec_desired, pose_t)
-
-                #     # normalize and scale the wheel velocities
-                #     max_wheel_vel = max(abs(wheel_velocities[0]), abs(wheel_velocities[1]))
-                #     wheel_velocities = wheel_velocities/max_wheel_vel
-                #     wheel_velocities = wheel_velocities*sheep_speed
-
-                #     # set the wheel velocities
-                #     robot.set_vel(wheel_velocities[0], wheel_velocities[1])
-                # else:
-                # #     print(f"Stopping sheep {robot.virtual_id}")
-                # #     # print(vec_desired)
-                #     robot.set_vel(0.0, 0.0) # stop moving
-                
-                # # construct message to send to other robots
-                # pose_copy.append(float(robot.virtual_id))
-                # msg = pose_copy
-                # robot.send_msg(msg)
-
-                # return
-
+            # boids flocking model for the sheep (alignment)
             # calculate the average heading of the neighbors within f_N distance
             avg_heading = 0.0
             within_f_N = 0
@@ -624,18 +509,6 @@ def sheep(robot):
                         vec_desired = np.add(vec_desired, c*vec_attraction)
                         vec_desired = vec_desired/np.linalg.norm(vec_desired)
 
-        # # move only if the sheep is prompted to move
-        # if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
-        #     # calculate the error in heading wrt the desired movement direction
-        #     heading_error = math.atan2(np.linalg.det([vec_curr, vec_desired]), np.dot(vec_desired, vec_curr))
-
-        #     if heading_error > 0:
-        #         robot.set_vel(sheep_speed, sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi)) # turn left
-        #     else:
-        #         robot.set_vel(sheep_speed + sheep_speed*st_con*(abs(heading_error)/np.pi), sheep_speed) # turn right
-        # else:
-        #     robot.set_vel(0.0, 0.0) # stop moving
-                    
         # move only if the sheep is prompted to move
         if vec_desired[0] != 0.0 or vec_desired[1] != 0.0:
             # use the differential drive motion model to calculate the wheel velocities
@@ -649,8 +522,6 @@ def sheep(robot):
             # set the wheel velocities
             robot.set_vel(wheel_velocities[0], wheel_velocities[1])
         else:
-        #     print(f"Stopping sheep {robot.virtual_id}")
-        #     # print(vec_desired)
             robot.set_vel(0.0, 0.0) # stop moving
         
         # construct message to send to other robots
